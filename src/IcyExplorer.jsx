@@ -145,7 +145,7 @@ export default function IcyExplorer() {
       </div>
       <div className="mt-4 text-cyan-200 text-center">
         <p className="mb-2">
-          <span className="font-bold">Šípky</span> - pohyb |
+          <span className="font-bold">WASD/Šípky</span> - pohyb |
           <span className="font-bold"> MEDZERNÍK</span> - otvoriť truhlicu |
           <span className="font-bold"> E</span> - inventár
         </p>

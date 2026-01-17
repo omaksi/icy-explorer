@@ -4,10 +4,18 @@ export const useKeyboard = (onSpace, onInventory) => {
   const [keys, setKeys] = useState({});
 
   useEffect(() => {
+    const keyMap = {
+      'w': 'ArrowUp', 'W': 'ArrowUp',
+      's': 'ArrowDown', 'S': 'ArrowDown',
+      'a': 'ArrowLeft', 'A': 'ArrowLeft',
+      'd': 'ArrowRight', 'D': 'ArrowRight',
+    };
+
     const handleKeyDown = (e) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      const mappedKey = keyMap[e.key] || e.key;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(mappedKey)) {
         e.preventDefault();
-        setKeys(prev => ({ ...prev, [e.key]: true }));
+        setKeys(prev => ({ ...prev, [mappedKey]: true }));
       }
       if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
@@ -20,9 +28,10 @@ export const useKeyboard = (onSpace, onInventory) => {
     };
 
     const handleKeyUp = (e) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      const mappedKey = keyMap[e.key] || e.key;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(mappedKey)) {
         e.preventDefault();
-        setKeys(prev => ({ ...prev, [e.key]: false }));
+        setKeys(prev => ({ ...prev, [mappedKey]: false }));
       }
     };
 
