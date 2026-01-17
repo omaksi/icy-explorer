@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'server/**'
+      - '.github/workflows/docker-build.yml'
   workflow_dispatch:
 
 env:
@@ -53,3 +54,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
