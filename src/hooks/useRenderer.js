@@ -84,8 +84,8 @@ export const useRenderer = ({
       const cameraX = player.x - vw / 2;
       const cameraY = player.y - vh / 2;
 
-      // Clear canvas with appropriate background
-      ctx.fillStyle = inCave ? '#1f2937' : '#e8f4f8';
+      // Clear canvas with fog color (unexplored areas)
+      ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, vw, vh);
 
       // Calculate visible tile range
@@ -94,9 +94,12 @@ export const useRenderer = ({
       const endTileX = Math.min(currentWidth, Math.ceil((cameraX + vw) / TILE_SIZE) + 1);
       const endTileY = Math.min(currentHeight, Math.ceil((cameraY + vh) / TILE_SIZE) + 1);
 
-      // Draw tiles
+      // Draw tiles with fog of war (only explored tiles are visible)
       for (let y = startTileY; y < endTileY; y++) {
         for (let x = startTileX; x < endTileX; x++) {
+          const isExplored = explored && explored[y] && explored[y][x];
+          if (!isExplored) continue;
+
           const tile = currentWorld[y][x];
           const screenX = x * TILE_SIZE - cameraX;
           const screenY = y * TILE_SIZE - cameraY;
@@ -112,10 +115,15 @@ export const useRenderer = ({
         }
       }
 
-      // Draw treasures
+      // Draw treasures (only if in explored area)
       const currentTreasures = inCave ? caveTreasures : treasures;
       currentTreasures.forEach(treasure => {
-        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
+        const treasureTileX = Math.floor(treasure.x / TILE_SIZE);
+        const treasureTileY = Math.floor(treasure.y / TILE_SIZE);
+        const isExplored = explored && explored[treasureTileY] && explored[treasureTileY][treasureTileX];
+        if (isExplored) {
+          drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
+        }
       });
 
       // Draw player
