@@ -55,4 +55,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VITE_WS_URL=wss://ws.icy-explorer.maksi.sk
+            VITE_WS_URL=wss://icy-explorer-ws.maksi.sk
