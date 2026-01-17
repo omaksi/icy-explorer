@@ -28,3 +28,7 @@ Automatic deployment to GitHub Pages via GitHub Actions on push to main branch.
 ## Commit Style
 
 Use simple one-line commit messages.
+
+## Workflow
+
+Push directly to main, no branching needed.
