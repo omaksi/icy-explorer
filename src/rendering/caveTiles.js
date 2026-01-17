@@ -22,6 +22,9 @@ export const drawCaveTile = (ctx, tile, screenX, screenY, x, y) => {
     case CAVE_TILES.EXIT:
       drawExit(ctx, screenX, screenY);
       break;
+    case CAVE_TILES.CHEST:
+      drawChest(ctx, screenX, screenY);
+      break;
     case CAVE_TILES.FLOOR:
       drawFloorDetails(ctx, screenX, screenY, x, y);
       break;
@@ -168,6 +171,46 @@ const drawExit = (ctx, screenX, screenY) => {
   ctx.lineTo(screenX + 12, screenY + 14);
   ctx.closePath();
   ctx.fill();
+};
+
+const drawChest = (ctx, screenX, screenY) => {
+  // Draw floor underneath
+  ctx.fillStyle = '#374151';
+  ctx.fillRect(screenX, screenY, 32, 32);
+
+  // Chest body (wooden brown)
+  ctx.fillStyle = '#92400e';
+  ctx.fillRect(screenX + 4, screenY + 12, 24, 16);
+
+  // Chest lid (darker brown)
+  ctx.fillStyle = '#78350f';
+  ctx.beginPath();
+  ctx.moveTo(screenX + 4, screenY + 12);
+  ctx.lineTo(screenX + 8, screenY + 6);
+  ctx.lineTo(screenX + 24, screenY + 6);
+  ctx.lineTo(screenX + 28, screenY + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lid top
+  ctx.fillStyle = '#a16207';
+  ctx.fillRect(screenX + 8, screenY + 6, 16, 6);
+
+  // Metal clasp
+  ctx.fillStyle = '#fbbf24';
+  ctx.fillRect(screenX + 13, screenY + 14, 6, 8);
+
+  // Keyhole
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath();
+  ctx.arc(screenX + 16, screenY + 17, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(screenX + 15, screenY + 18, 2, 3);
+
+  // Metal bands
+  ctx.fillStyle = '#d97706';
+  ctx.fillRect(screenX + 4, screenY + 14, 2, 12);
+  ctx.fillRect(screenX + 26, screenY + 14, 2, 12);
 };
 
 const drawFloorDetails = (ctx, screenX, screenY, x, y) => {

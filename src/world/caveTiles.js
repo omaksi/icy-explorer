@@ -5,6 +5,7 @@ export const CAVE_TILES = {
   ORE: 3,
   CRYSTAL: 4,
   EXIT: 5,
+  CHEST: 6,
 };
 
 export const CAVE_TILE_COLORS = {
@@ -14,6 +15,7 @@ export const CAVE_TILE_COLORS = {
   [CAVE_TILES.ORE]: '#92400e',
   [CAVE_TILES.CRYSTAL]: '#a855f7',
   [CAVE_TILES.EXIT]: '#4ade80',
+  [CAVE_TILES.CHEST]: '#374151',
 };
 
 export const isCaveWalkable = (tile) => {
