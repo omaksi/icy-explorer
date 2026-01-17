@@ -70,7 +70,7 @@ export const drawMinimap = (ctx, world, player, treasures) => {
   ctx.strokeRect(mapX, mapY, MAP_SIZE, MAP_SIZE);
 };
 
-export const drawCaveMinimap = (ctx, caveMap, player) => {
+export const drawCaveMinimap = (ctx, caveMap, player, caveTreasures) => {
   const mapX = VIEWPORT_WIDTH - MAP_SIZE - 10;
   const mapY = 10;
 
@@ -105,6 +105,21 @@ export const drawCaveMinimap = (ctx, caveMap, player) => {
       );
     }
   }
+
+  // Draw cave treasures on minimap
+  caveTreasures.forEach(treasure => {
+    if (treasure.collected) return;
+    ctx.fillStyle = treasure.opened ? '#fbbf24' : '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(
+      mapX + treasure.x * mapScale,
+      mapY + treasure.y * mapScale,
+      2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  });
 
   // Player position on mini-map
   ctx.fillStyle = '#ef4444';

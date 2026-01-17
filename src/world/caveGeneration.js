@@ -1,5 +1,7 @@
 import { CAVE_TILES } from './caveTiles';
 import { seededRandom } from '../utils/random';
+import { VYBRANE_SLOVA } from '../data/words';
+import { TILE_SIZE } from '../constants';
 
 const CAVE_WIDTH = 25;
 const CAVE_HEIGHT = 25;
@@ -167,6 +169,46 @@ export const generateCave = (seed) => {
   }
 
   return cave;
+};
+
+export const generateCaveTreasures = (cave, seed) => {
+  const treasures = [];
+  const usedWords = new Set();
+
+  for (let y = 0; y < CAVE_HEIGHT; y++) {
+    for (let x = 0; x < CAVE_WIDTH; x++) {
+      if (cave[y][x] === CAVE_TILES.CHEST) {
+        // Pick a random word that hasn't been used
+        let word;
+        let attempts = 0;
+        const tileSeed = seed + y * CAVE_WIDTH + x;
+        do {
+          const wordIndex = Math.floor(seededRandom(tileSeed + attempts * 100) * VYBRANE_SLOVA.length);
+          word = VYBRANE_SLOVA[wordIndex];
+          attempts++;
+        } while (usedWords.has(word) && attempts < 50);
+
+        if (!usedWords.has(word)) {
+          usedWords.add(word);
+          treasures.push({
+            x: x * TILE_SIZE + TILE_SIZE / 2,
+            y: y * TILE_SIZE + TILE_SIZE / 2,
+            tileX: x,
+            tileY: y,
+            word: word,
+            opened: false,
+            collected: false,
+            id: treasures.length,
+          });
+        }
+
+        // Convert chest tile to floor (treasure object will be drawn instead)
+        cave[y][x] = CAVE_TILES.FLOOR;
+      }
+    }
+  }
+
+  return treasures;
 };
 
 export { CAVE_WIDTH, CAVE_HEIGHT };

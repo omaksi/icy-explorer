@@ -4,7 +4,7 @@ import { isWalkable, TILES } from '../world/tiles';
 import { isCaveWalkable, CAVE_TILES } from '../world/caveTiles';
 import { CAVE_WIDTH, CAVE_HEIGHT } from '../world/caveGeneration';
 
-export const useGameLoop = (keys, world, treasures, inCave, caveMap) => {
+export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasures) => {
   const [player, setPlayer] = useState({
     x: WORLD_WIDTH * TILE_SIZE / 2,
     y: WORLD_HEIGHT * TILE_SIZE / 2,
@@ -93,18 +93,19 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap) => {
         };
       });
 
-      // Check for nearby treasures (only in overworld)
-      if (!inCave) {
-        setPlayer(prev => {
-          const nearby = treasures.find(t => {
-            if (t.collected) return false;
-            const dist = Math.sqrt((t.x - prev.x) ** 2 + (t.y - prev.y) ** 2);
-            return dist < 40;
-          });
-          setNearbyTreasure(nearby ? nearby.id : null);
-          return prev;
+      // Check for nearby treasures
+      const currentTreasures = inCave ? caveTreasures : treasures;
+      setPlayer(prev => {
+        const nearby = currentTreasures?.find(t => {
+          if (t.collected) return false;
+          const dist = Math.sqrt((t.x - prev.x) ** 2 + (t.y - prev.y) ** 2);
+          return dist < 40;
         });
+        setNearbyTreasure(nearby ? nearby.id : null);
+        return prev;
+      });
 
+      if (!inCave) {
         // Check for nearby cave entrances (only in overworld)
         setPlayer(prev => {
           const playerTileX = Math.floor(prev.x / TILE_SIZE);
@@ -129,7 +130,6 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap) => {
           return prev;
         });
       } else {
-        setNearbyTreasure(null);
         setNearbyCave(null);
 
         // Check for nearby exit (only in cave)
@@ -150,7 +150,7 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap) => {
     }, 1000 / 60);
 
     return () => clearInterval(gameLoop);
-  }, [keys, currentWorld, treasures, inCave, caveMap, currentWidth, currentHeight, checkWalkable]);
+  }, [keys, currentWorld, treasures, inCave, caveMap, caveTreasures, currentWidth, currentHeight, checkWalkable]);
 
   const setPlayerPosition = (x, y) => {
     setPlayer(prev => ({ ...prev, x, y }));

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { TILE_SIZE, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from './constants';
 import { TILES } from './world/tiles';
 import { generateWorld, generateTreasures } from './world/generation';
-import { generateCave, CAVE_WIDTH, CAVE_HEIGHT } from './world/caveGeneration';
+import { generateCave, generateCaveTreasures, CAVE_WIDTH, CAVE_HEIGHT } from './world/caveGeneration';
 import { drawTile, drawFrozenLakeCracks } from './rendering/tiles';
 import { drawCaveTile } from './rendering/caveTiles';
 import { drawPlayer } from './rendering/player';
@@ -28,6 +28,7 @@ export default function IcyExplorer() {
   // Cave state
   const [inCave, setInCave] = useState(false);
   const [caveMap, setCaveMap] = useState(null);
+  const [caveTreasures, setCaveTreasures] = useState([]);
   const [overworldPosition, setOverworldPosition] = useState(null);
 
   // Initialize treasures after world is created
@@ -41,7 +42,7 @@ export default function IcyExplorer() {
 
   const keys = useKeyboard(null, handleInventory);
   const { player, frameCount, nearbyTreasure, nearbyCave, nearbyExit, setPlayerPosition } = useGameLoop(
-    keys, world, treasures, inCave, caveMap
+    keys, world, treasures, inCave, caveMap, caveTreasures
   );
 
   // Handle spacebar for treasures, cave entry, and cave exit
@@ -50,9 +51,10 @@ export default function IcyExplorer() {
       if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
 
-        // Handle treasure interaction (overworld only)
-        if (!inCave && nearbyTreasure !== null) {
-          setTreasures(prev => prev.map(t => {
+        // Handle treasure interaction
+        if (nearbyTreasure !== null) {
+          const setterFn = inCave ? setCaveTreasures : setTreasures;
+          setterFn(prev => prev.map(t => {
             if (t.id === nearbyTreasure) {
               if (!t.opened) {
                 setShowWordPopup({ word: t.word, id: t.id });
@@ -78,6 +80,10 @@ export default function IcyExplorer() {
           const newCave = generateCave(seed);
           setCaveMap(newCave);
 
+          // Generate cave treasures from chest tiles
+          const newCaveTreasures = generateCaveTreasures(newCave, seed);
+          setCaveTreasures(newCaveTreasures);
+
           // Move player to cave entrance area
           setPlayerPosition(4 * TILE_SIZE, 4 * TILE_SIZE);
           setInCave(true);
@@ -92,6 +98,7 @@ export default function IcyExplorer() {
           }
           setInCave(false);
           setCaveMap(null);
+          setCaveTreasures([]);
           return;
         }
       }
@@ -145,24 +152,23 @@ export default function IcyExplorer() {
       }
     }
 
-    // Draw treasures (overworld only)
-    if (!inCave) {
-      treasures.forEach(treasure => {
-        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount);
-      });
-    }
+    // Draw treasures
+    const currentTreasures = inCave ? caveTreasures : treasures;
+    currentTreasures.forEach(treasure => {
+      drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount);
+    });
 
     // Draw player
     drawPlayer(ctx, player, keys);
 
     // Draw minimap
     if (inCave) {
-      drawCaveMinimap(ctx, caveMap, player);
+      drawCaveMinimap(ctx, caveMap, player, caveTreasures);
     } else {
       drawMinimap(ctx, world, player, treasures);
     }
 
-  }, [player, currentWorld, frameCount, keys, treasures, nearbyTreasure, inCave, caveMap, currentWidth, currentHeight]);
+  }, [player, currentWorld, frameCount, keys, treasures, caveTreasures, nearbyTreasure, inCave, caveMap, currentWidth, currentHeight]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
@@ -184,7 +190,7 @@ export default function IcyExplorer() {
 
         {showWordPopup && <WordPopup word={showWordPopup.word} />}
         {showInventory && <Inventory collectedWords={collectedWords} />}
-        {!inCave && nearbyTreasure !== null && !showWordPopup && !showInventory && <TreasureHint />}
+        {nearbyTreasure !== null && !showWordPopup && !showInventory && <TreasureHint />}
         {!inCave && nearbyCave !== null && nearbyTreasure === null && !showInventory && <CaveHint />}
         {inCave && nearbyExit && !showInventory && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2
