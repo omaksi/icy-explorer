@@ -31,4 +31,4 @@ Use simple one-line commit messages.
 
 ## Workflow
 
-Push directly to main, no branching needed.
+Use feature branches and pull requests for changes.
