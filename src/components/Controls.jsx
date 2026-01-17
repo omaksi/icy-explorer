@@ -1,4 +1,6 @@
-export default function Controls({ keys }) {
+import { memo } from 'react';
+
+function Controls({ keys }) {
   return (
     <div className="absolute bottom-4 right-4 flex gap-2">
       <div className="flex flex-col items-center">
@@ -32,3 +34,13 @@ export default function Controls({ keys }) {
     </div>
   );
 }
+
+// Custom comparison - only re-render if the actual key states changed
+export default memo(Controls, (prevProps, nextProps) => {
+  return (
+    prevProps.keys.ArrowUp === nextProps.keys.ArrowUp &&
+    prevProps.keys.ArrowDown === nextProps.keys.ArrowDown &&
+    prevProps.keys.ArrowLeft === nextProps.keys.ArrowLeft &&
+    prevProps.keys.ArrowRight === nextProps.keys.ArrowRight
+  );
+});

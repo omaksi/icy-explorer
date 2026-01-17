@@ -1,8 +1,6 @@
-import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../constants';
-
-export const drawPlayer = (ctx, player, keys) => {
-  const playerScreenX = VIEWPORT_WIDTH / 2;
-  const playerScreenY = VIEWPORT_HEIGHT / 2;
+export const drawPlayer = (ctx, player, keys, viewportWidth, viewportHeight) => {
+  const playerScreenX = viewportWidth / 2;
+  const playerScreenY = viewportHeight / 2;
 
   // Animation bob
   const bob = Math.sin(player.frame * 0.4) * 2;
