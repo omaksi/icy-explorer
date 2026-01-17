@@ -5,105 +5,46 @@ import { CAVE_WIDTH, CAVE_HEIGHT } from '../world/caveGeneration';
 
 const MAP_SIZE = 120;
 
-// Cache for offscreen minimap rendering
-let overworldMinimapCache = null;
-let overworldMinimapWorld = null;
-let caveMinimapCache = null;
-let caveMinimapMap = null;
+export const drawMinimap = (ctx, world, player, viewportWidth, explored) => {
+  const vw = viewportWidth || FALLBACK_VIEWPORT_WIDTH;
+  const mapX = vw - MAP_SIZE - 10;
+  const mapY = 10;
 
-const createOverworldMinimapCache = (world) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = MAP_SIZE;
-  canvas.height = MAP_SIZE;
-  const ctx = canvas.getContext('2d');
-
-  // Background
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+  // Background (fog color)
+  ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
+  ctx.fillRect(mapX, mapY, MAP_SIZE, MAP_SIZE);
 
   const mapScale = MAP_SIZE / (WORLD_WIDTH * TILE_SIZE);
 
-  // Draw mini-map tiles (simplified)
-  for (let y = 0; y < WORLD_HEIGHT; y += 4) {
-    for (let x = 0; x < WORLD_WIDTH; x += 4) {
+  // Draw mini-map tiles (only explored ones)
+  for (let y = 0; y < WORLD_HEIGHT; y += 2) {
+    for (let x = 0; x < WORLD_WIDTH; x += 2) {
+      // Check if this area is explored
+      const isExplored = explored && explored[y] && explored[y][x];
+      if (!isExplored) continue;
+
       const tile = world[y][x];
       if (tile === TILES.FROZEN_LAKE) {
         ctx.fillStyle = '#7dd3fc';
       } else if (tile === TILES.TREE) {
         ctx.fillStyle = '#2d5a3d';
+      } else if (tile === TILES.ROCK) {
+        ctx.fillStyle = '#6b7280';
       } else if (tile === TILES.CAVE_ENTRANCE) {
         ctx.fillStyle = '#1f2937';
+      } else if (tile === TILES.SNOW || tile === TILES.ICE || tile === TILES.DEEP_SNOW) {
+        ctx.fillStyle = '#e8f4f8';
       } else {
         continue;
       }
       ctx.fillRect(
-        x * mapScale * TILE_SIZE,
-        y * mapScale * TILE_SIZE,
-        4,
-        4
-      );
-    }
-  }
-
-  return canvas;
-};
-
-const createCaveMinimapCache = (caveMap) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = MAP_SIZE;
-  canvas.height = MAP_SIZE;
-  const ctx = canvas.getContext('2d');
-
-  // Background (darker for cave)
-  ctx.fillStyle = 'rgba(31, 41, 55, 0.8)';
-  ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-
-  const mapScale = MAP_SIZE / (CAVE_WIDTH * TILE_SIZE);
-
-  // Draw cave mini-map tiles
-  for (let y = 0; y < CAVE_HEIGHT; y += 2) {
-    for (let x = 0; x < CAVE_WIDTH; x += 2) {
-      const tile = caveMap[y][x];
-      if (tile === CAVE_TILES.WALL) {
-        ctx.fillStyle = '#374151';
-      } else if (tile === CAVE_TILES.ICE_SPIKE) {
-        ctx.fillStyle = '#7dd3fc';
-      } else if (tile === CAVE_TILES.CRYSTAL) {
-        ctx.fillStyle = '#a855f7';
-      } else if (tile === CAVE_TILES.ORE) {
-        ctx.fillStyle = '#fbbf24';
-      } else if (tile === CAVE_TILES.EXIT) {
-        ctx.fillStyle = '#4ade80';
-      } else {
-        continue;
-      }
-      ctx.fillRect(
-        x * mapScale * TILE_SIZE,
-        y * mapScale * TILE_SIZE,
+        mapX + x * mapScale * TILE_SIZE,
+        mapY + y * mapScale * TILE_SIZE,
         3,
         3
       );
     }
   }
-
-  return canvas;
-};
-
-export const drawMinimap = (ctx, world, player, viewportWidth) => {
-  const vw = viewportWidth || FALLBACK_VIEWPORT_WIDTH;
-  const mapX = vw - MAP_SIZE - 10;
-  const mapY = 10;
-
-  // Cache the terrain layer if world changed
-  if (world !== overworldMinimapWorld) {
-    overworldMinimapCache = createOverworldMinimapCache(world);
-    overworldMinimapWorld = world;
-  }
-
-  // Draw cached terrain
-  ctx.drawImage(overworldMinimapCache, mapX, mapY);
-
-  const mapScale = MAP_SIZE / (WORLD_WIDTH * TILE_SIZE);
 
   // Player position on mini-map
   ctx.fillStyle = '#ef4444';
@@ -123,21 +64,48 @@ export const drawMinimap = (ctx, world, player, viewportWidth) => {
   ctx.strokeRect(mapX, mapY, MAP_SIZE, MAP_SIZE);
 };
 
-export const drawCaveMinimap = (ctx, caveMap, player, viewportWidth) => {
+export const drawCaveMinimap = (ctx, caveMap, player, viewportWidth, explored) => {
   const vw = viewportWidth || FALLBACK_VIEWPORT_WIDTH;
   const mapX = vw - MAP_SIZE - 10;
   const mapY = 10;
 
-  // Cache the terrain layer if caveMap changed
-  if (caveMap !== caveMinimapMap) {
-    caveMinimapCache = createCaveMinimapCache(caveMap);
-    caveMinimapMap = caveMap;
-  }
-
-  // Draw cached terrain
-  ctx.drawImage(caveMinimapCache, mapX, mapY);
+  // Background (fog color)
+  ctx.fillStyle = 'rgba(26, 26, 46, 0.8)';
+  ctx.fillRect(mapX, mapY, MAP_SIZE, MAP_SIZE);
 
   const mapScale = MAP_SIZE / (CAVE_WIDTH * TILE_SIZE);
+
+  // Draw cave mini-map tiles (only explored ones)
+  for (let y = 0; y < CAVE_HEIGHT; y += 2) {
+    for (let x = 0; x < CAVE_WIDTH; x += 2) {
+      // Check if this area is explored
+      const isExplored = explored && explored[y] && explored[y][x];
+      if (!isExplored) continue;
+
+      const tile = caveMap[y][x];
+      if (tile === CAVE_TILES.WALL) {
+        ctx.fillStyle = '#374151';
+      } else if (tile === CAVE_TILES.ICE_SPIKE) {
+        ctx.fillStyle = '#7dd3fc';
+      } else if (tile === CAVE_TILES.CRYSTAL) {
+        ctx.fillStyle = '#a855f7';
+      } else if (tile === CAVE_TILES.ORE) {
+        ctx.fillStyle = '#fbbf24';
+      } else if (tile === CAVE_TILES.EXIT) {
+        ctx.fillStyle = '#4ade80';
+      } else if (tile === CAVE_TILES.FLOOR) {
+        ctx.fillStyle = '#4b5563';
+      } else {
+        continue;
+      }
+      ctx.fillRect(
+        mapX + x * mapScale * TILE_SIZE,
+        mapY + y * mapScale * TILE_SIZE,
+        3,
+        3
+      );
+    }
+  }
 
   // Player position on mini-map
   ctx.fillStyle = '#ef4444';

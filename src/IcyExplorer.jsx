@@ -5,6 +5,7 @@ import { useGameLoop } from './hooks/useGameLoop';
 import { useInteraction } from './hooks/useInteraction';
 import { useRenderer } from './hooks/useRenderer';
 import { useWindowSize } from './hooks/useWindowSize';
+import { useExploration } from './hooks/useExploration';
 import Inventory from './components/Inventory';
 import WordPopup from './components/WordPopup';
 import TreasureHint from './components/TreasureHint';
@@ -40,6 +41,7 @@ export default function IcyExplorer() {
   const { player, frameCount, nearbyTreasure, nearbyCave, nearbyExit, setPlayerPosition } = useGameLoop(
     keys, world, treasures, inCave, caveMap, caveTreasures
   );
+  const { explored, resetCaveExploration } = useExploration(player, inCave);
 
   // Handle spacebar for treasures, cave entry, and cave exit
   useInteraction({
@@ -57,6 +59,7 @@ export default function IcyExplorer() {
     setCollectedWords,
     setCaveMap,
     setInCave,
+    resetCaveExploration,
   });
 
   // Render
@@ -73,6 +76,7 @@ export default function IcyExplorer() {
     frameCount,
     viewportWidth: windowWidth,
     viewportHeight: windowHeight,
+    explored,
   });
 
   return (

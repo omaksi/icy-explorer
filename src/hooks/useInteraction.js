@@ -19,6 +19,7 @@ export const useInteraction = ({
   setCollectedWords,
   setCaveMap,
   setInCave,
+  resetCaveExploration,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -54,6 +55,7 @@ export const useInteraction = ({
         const newCaveTreasures = generateCaveTreasures(newCave, seed);
         setCaveTreasures(newCaveTreasures);
         setPlayerPosition(4 * TILE_SIZE, 4 * TILE_SIZE);
+        resetCaveExploration();
         setInCave(true);
         return;
       }
@@ -74,6 +76,6 @@ export const useInteraction = ({
   }, [
     nearbyTreasure, nearbyCave, nearbyExit, inCave, player, overworldPosition,
     setPlayerPosition, setOverworldPosition, setTreasures, setCaveTreasures,
-    setShowWordPopup, setCollectedWords, setCaveMap, setInCave
+    setShowWordPopup, setCollectedWords, setCaveMap, setInCave, resetCaveExploration
   ]);
 };

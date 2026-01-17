@@ -8,8 +8,20 @@ const CAVE_HEIGHT = 25;
 
 const SPAWN_X = 3;
 const SPAWN_Y = 3;
-const EXIT_X = CAVE_WIDTH - 3;
-const EXIT_Y = CAVE_HEIGHT - 3;
+
+const getExitPosition = (seed) => {
+  const rand = seededRandom(seed + 9999);
+  // Possible exit positions: corners and mid-edges, away from spawn (top-left)
+  const positions = [
+    { x: CAVE_WIDTH - 3, y: CAVE_HEIGHT - 3 }, // bottom-right
+    { x: CAVE_WIDTH - 3, y: 3 },               // top-right
+    { x: 3, y: CAVE_HEIGHT - 3 },              // bottom-left
+    { x: CAVE_WIDTH - 3, y: Math.floor(CAVE_HEIGHT / 2) }, // mid-right
+    { x: Math.floor(CAVE_WIDTH / 2), y: CAVE_HEIGHT - 3 }, // mid-bottom
+  ];
+  const index = Math.floor(rand * positions.length);
+  return positions[index];
+};
 
 // BFS pathfinding to check if exit is reachable from spawn
 const isWalkable = (tile) => {
@@ -62,6 +74,7 @@ const carvePath = (cave, path) => {
 
 export const generateCave = (seed) => {
   const cave = [];
+  const exitPos = getExitPosition(seed);
 
   for (let y = 0; y < CAVE_HEIGHT; y++) {
     const row = [];
@@ -77,7 +90,7 @@ export const generateCave = (seed) => {
       }
 
       // Exit tile
-      if (x === EXIT_X && y === EXIT_Y) {
+      if (x === exitPos.x && y === exitPos.y) {
         row.push(CAVE_TILES.EXIT);
         continue;
       }
@@ -133,8 +146,8 @@ export const generateCave = (seed) => {
   }
 
   // Ensure exit area is clear
-  for (let y = EXIT_Y - 1; y <= EXIT_Y + 1; y++) {
-    for (let x = EXIT_X - 1; x <= EXIT_X + 1; x++) {
+  for (let y = exitPos.y - 1; y <= exitPos.y + 1; y++) {
+    for (let x = exitPos.x - 1; x <= exitPos.x + 1; x++) {
       if (y > 0 && y < CAVE_HEIGHT - 1 && x > 0 && x < CAVE_WIDTH - 1) {
         if (cave[y][x] !== CAVE_TILES.EXIT) {
           cave[y][x] = CAVE_TILES.FLOOR;
@@ -144,23 +157,23 @@ export const generateCave = (seed) => {
   }
 
   // Check if path exists, if not carve one
-  const path = findPath(cave, SPAWN_X, SPAWN_Y, EXIT_X, EXIT_Y);
+  const path = findPath(cave, SPAWN_X, SPAWN_Y, exitPos.x, exitPos.y);
   if (!path) {
     // Carve a direct path if no path exists
     const directPath = [];
     let x = SPAWN_X;
     let y = SPAWN_Y;
 
-    while (x !== EXIT_X || y !== EXIT_Y) {
-      if (x < EXIT_X) x++;
-      else if (x > EXIT_X) x--;
+    while (x !== exitPos.x || y !== exitPos.y) {
+      if (x < exitPos.x) x++;
+      else if (x > exitPos.x) x--;
 
       directPath.push({ x, y });
 
-      if (y < EXIT_Y) y++;
-      else if (y > EXIT_Y) y--;
+      if (y < exitPos.y) y++;
+      else if (y > exitPos.y) y--;
 
-      if (x !== EXIT_X || y !== EXIT_Y) {
+      if (x !== exitPos.x || y !== exitPos.y) {
         directPath.push({ x, y });
       }
     }

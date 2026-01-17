@@ -7,6 +7,7 @@ import { drawCaveTile } from '../rendering/caveTiles';
 import { drawPlayer } from '../rendering/player';
 import { drawTreasure } from '../rendering/treasure';
 import { drawMinimap, drawCaveMinimap } from '../rendering/minimap';
+import { isTileVisible } from './useExploration';
 
 export const useRenderer = ({
   canvasRef,
@@ -21,6 +22,7 @@ export const useRenderer = ({
   frameCount,
   viewportWidth,
   viewportHeight,
+  explored,
 }) => {
   // Use refs to avoid effect re-runs on every state change
   const worldRef = useRef(world);
@@ -34,6 +36,7 @@ export const useRenderer = ({
   const frameCountRef = useRef(frameCount);
   const viewportWidthRef = useRef(viewportWidth);
   const viewportHeightRef = useRef(viewportHeight);
+  const exploredRef = useRef(explored);
 
   // Keep refs in sync
   useEffect(() => { worldRef.current = world; }, [world]);
@@ -47,6 +50,7 @@ export const useRenderer = ({
   useEffect(() => { frameCountRef.current = frameCount; }, [frameCount]);
   useEffect(() => { viewportWidthRef.current = viewportWidth; }, [viewportWidth]);
   useEffect(() => { viewportHeightRef.current = viewportHeight; }, [viewportHeight]);
+  useEffect(() => { exploredRef.current = explored; }, [explored]);
 
   // Single stable render loop using requestAnimationFrame
   useEffect(() => {
@@ -65,6 +69,7 @@ export const useRenderer = ({
       const frameCount = frameCountRef.current;
       const vw = viewportWidthRef.current || FALLBACK_VIEWPORT_WIDTH;
       const vh = viewportHeightRef.current || FALLBACK_VIEWPORT_HEIGHT;
+      const explored = exploredRef.current;
 
       const currentWorld = inCave ? caveMap : world;
       if (!canvas || !currentWorld) {
@@ -80,8 +85,8 @@ export const useRenderer = ({
       const cameraX = player.x - vw / 2;
       const cameraY = player.y - vh / 2;
 
-      // Clear canvas with appropriate background
-      ctx.fillStyle = inCave ? '#1f2937' : '#e8f4f8';
+      // Clear canvas with fog color (unexplored areas)
+      ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, vw, vh);
 
       // Calculate visible tile range
@@ -90,28 +95,45 @@ export const useRenderer = ({
       const endTileX = Math.min(currentWidth, Math.ceil((cameraX + vw) / TILE_SIZE) + 1);
       const endTileY = Math.min(currentHeight, Math.ceil((cameraY + vh) / TILE_SIZE) + 1);
 
-      // Draw tiles
+      // Draw tiles with fog of war
       for (let y = startTileY; y < endTileY; y++) {
         for (let x = startTileX; x < endTileX; x++) {
           const tile = currentWorld[y][x];
           const screenX = x * TILE_SIZE - cameraX;
           const screenY = y * TILE_SIZE - cameraY;
 
-          if (inCave) {
-            drawCaveTile(ctx, tile, screenX, screenY, x, y);
-          } else {
-            drawTile(ctx, tile, screenX, screenY);
-            if (tile === TILES.FROZEN_LAKE) {
-              drawFrozenLakeCracks(ctx, screenX, screenY, x, y);
+          const isExplored = explored && explored[y] && explored[y][x];
+          const isVisible = isTileVisible(x, y, player.x, player.y);
+
+          // Only draw explored tiles
+          if (isExplored) {
+            if (inCave) {
+              drawCaveTile(ctx, tile, screenX, screenY, x, y);
+            } else {
+              drawTile(ctx, tile, screenX, screenY);
+              if (tile === TILES.FROZEN_LAKE) {
+                drawFrozenLakeCracks(ctx, screenX, screenY, x, y);
+              }
+            }
+
+            // Apply fog overlay for explored but not currently visible tiles
+            if (!isVisible) {
+              ctx.fillStyle = 'rgba(26, 26, 46, 0.5)';
+              ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
             }
           }
         }
       }
 
-      // Draw treasures
+      // Draw treasures (only if in visible/explored area)
       const currentTreasures = inCave ? caveTreasures : treasures;
       currentTreasures.forEach(treasure => {
-        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
+        const treasureTileX = Math.floor(treasure.x / TILE_SIZE);
+        const treasureTileY = Math.floor(treasure.y / TILE_SIZE);
+        const isExplored = explored && explored[treasureTileY] && explored[treasureTileY][treasureTileX];
+        if (isExplored) {
+          drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
+        }
       });
 
       // Draw player
@@ -119,9 +141,9 @@ export const useRenderer = ({
 
       // Draw minimap
       if (inCave) {
-        drawCaveMinimap(ctx, caveMap, player, vw);
+        drawCaveMinimap(ctx, caveMap, player, vw, explored);
       } else {
-        drawMinimap(ctx, world, player, vw);
+        drawMinimap(ctx, world, player, vw, explored);
       }
 
       animationId = requestAnimationFrame(render);
