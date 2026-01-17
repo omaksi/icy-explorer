@@ -86,61 +86,58 @@ const drawIceSpike = (ctx, screenX, screenY) => {
 };
 
 const drawOre = (ctx, screenX, screenY, x, y) => {
-  // Gold/metallic flecks
+  // Draw floor details first
+  drawFloorDetails(ctx, screenX, screenY, x, y);
+
+  // Small gold flecks scattered on the ground
   ctx.fillStyle = '#fbbf24';
   const seed = x * 100 + y + 3000;
-  for (let i = 0; i < 5; i++) {
-    const rx = seededRandom(seed + i * 7) * 26 + 3;
-    const ry = seededRandom(seed + i * 7 + 3) * 26 + 3;
+  for (let i = 0; i < 4; i++) {
+    const rx = seededRandom(seed + i * 7) * 24 + 4;
+    const ry = seededRandom(seed + i * 7 + 3) * 24 + 4;
     ctx.beginPath();
-    ctx.arc(screenX + rx, screenY + ry, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Darker rock patches
-  ctx.fillStyle = '#78350f';
-  for (let i = 0; i < 2; i++) {
-    const rx = seededRandom(seed + i * 20 + 50) * 20 + 6;
-    const ry = seededRandom(seed + i * 20 + 55) * 20 + 6;
-    ctx.beginPath();
-    ctx.ellipse(screenX + rx, screenY + ry, 5, 4, 0, 0, Math.PI * 2);
+    ctx.arc(screenX + rx, screenY + ry, 1.5, 0, Math.PI * 2);
     ctx.fill();
   }
 };
 
 const drawCrystal = (ctx, screenX, screenY) => {
-  // Glow effect
-  ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
+  // Draw floor base
+  ctx.fillStyle = '#374151';
+  ctx.fillRect(screenX, screenY, 32, 32);
+
+  // Subtle purple glow
+  ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
   ctx.beginPath();
-  ctx.arc(screenX + 16, screenY + 16, 14, 0, Math.PI * 2);
+  ctx.arc(screenX + 16, screenY + 16, 12, 0, Math.PI * 2);
   ctx.fill();
 
-  // Main crystal body
+  // Small purple crystal shards on the ground
   ctx.fillStyle = '#a855f7';
   ctx.beginPath();
-  ctx.moveTo(screenX + 16, screenY + 4);
-  ctx.lineTo(screenX + 24, screenY + 14);
-  ctx.lineTo(screenX + 22, screenY + 26);
-  ctx.lineTo(screenX + 10, screenY + 26);
-  ctx.lineTo(screenX + 8, screenY + 14);
+  ctx.moveTo(screenX + 14, screenY + 14);
+  ctx.lineTo(screenX + 16, screenY + 10);
+  ctx.lineTo(screenX + 18, screenY + 14);
   ctx.closePath();
   ctx.fill();
 
-  // Highlight facet
+  ctx.beginPath();
+  ctx.moveTo(screenX + 18, screenY + 18);
+  ctx.lineTo(screenX + 21, screenY + 14);
+  ctx.lineTo(screenX + 22, screenY + 18);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(screenX + 10, screenY + 18);
+  ctx.lineTo(screenX + 11, screenY + 14);
+  ctx.lineTo(screenX + 14, screenY + 18);
+  ctx.closePath();
+  ctx.fill();
+
+  // Highlights
   ctx.fillStyle = '#c084fc';
-  ctx.beginPath();
-  ctx.moveTo(screenX + 16, screenY + 4);
-  ctx.lineTo(screenX + 20, screenY + 12);
-  ctx.lineTo(screenX + 16, screenY + 20);
-  ctx.lineTo(screenX + 12, screenY + 12);
-  ctx.closePath();
-  ctx.fill();
-
-  // Bright spot
-  ctx.fillStyle = '#e9d5ff';
-  ctx.beginPath();
-  ctx.arc(screenX + 14, screenY + 10, 2, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillRect(screenX + 15, screenY + 11, 1, 2);
 };
 
 const drawExit = (ctx, screenX, screenY) => {
