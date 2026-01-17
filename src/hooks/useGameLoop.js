@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { TILE_SIZE, WORLD_WIDTH, WORLD_HEIGHT, PLAYER_SPEED } from '../constants';
-import { isWalkable } from '../world/tiles';
+import { isWalkable, TILES } from '../world/tiles';
+import { isCaveWalkable, CAVE_TILES } from '../world/caveTiles';
+import { CAVE_WIDTH, CAVE_HEIGHT } from '../world/caveGeneration';
 
-export const useGameLoop = (keys, world, treasures) => {
+export const useGameLoop = (keys, world, treasures, inCave, caveMap) => {
   const [player, setPlayer] = useState({
     x: WORLD_WIDTH * TILE_SIZE / 2,
     y: WORLD_HEIGHT * TILE_SIZE / 2,
@@ -11,8 +13,18 @@ export const useGameLoop = (keys, world, treasures) => {
   });
   const [frameCount, setFrameCount] = useState(0);
   const [nearbyTreasure, setNearbyTreasure] = useState(null);
+  const [nearbyCave, setNearbyCave] = useState(null);
+  const [nearbyExit, setNearbyExit] = useState(false);
+
+  // Get current map dimensions and walkability check
+  const currentWorld = inCave ? caveMap : world;
+  const currentWidth = inCave ? CAVE_WIDTH : WORLD_WIDTH;
+  const currentHeight = inCave ? CAVE_HEIGHT : WORLD_HEIGHT;
+  const checkWalkable = inCave ? isCaveWalkable : isWalkable;
 
   useEffect(() => {
+    if (!currentWorld) return;
+
     const gameLoop = setInterval(() => {
       setFrameCount(f => f + 1);
 
@@ -45,8 +57,8 @@ export const useGameLoop = (keys, world, treasures) => {
         }
 
         // Check collision with world bounds
-        newX = Math.max(16, Math.min(WORLD_WIDTH * TILE_SIZE - 16, newX));
-        newY = Math.max(16, Math.min(WORLD_HEIGHT * TILE_SIZE - 16, newY));
+        newX = Math.max(16, Math.min(currentWidth * TILE_SIZE - 16, newX));
+        newY = Math.max(16, Math.min(currentHeight * TILE_SIZE - 16, newY));
 
         // Check surrounding tiles for collision
         const checkPoints = [
@@ -60,8 +72,8 @@ export const useGameLoop = (keys, world, treasures) => {
         for (const point of checkPoints) {
           const ptX = Math.floor(point.x / TILE_SIZE);
           const ptY = Math.floor(point.y / TILE_SIZE);
-          if (ptX >= 0 && ptX < WORLD_WIDTH && ptY >= 0 && ptY < WORLD_HEIGHT) {
-            if (!isWalkable(world[ptY][ptX])) {
+          if (ptX >= 0 && ptX < currentWidth && ptY >= 0 && ptY < currentHeight) {
+            if (!checkWalkable(currentWorld[ptY][ptX])) {
               canMove = false;
               break;
             }
@@ -81,20 +93,68 @@ export const useGameLoop = (keys, world, treasures) => {
         };
       });
 
-      // Check for nearby treasures
-      setPlayer(prev => {
-        const nearby = treasures.find(t => {
-          if (t.collected) return false;
-          const dist = Math.sqrt((t.x - prev.x) ** 2 + (t.y - prev.y) ** 2);
-          return dist < 40;
+      // Check for nearby treasures (only in overworld)
+      if (!inCave) {
+        setPlayer(prev => {
+          const nearby = treasures.find(t => {
+            if (t.collected) return false;
+            const dist = Math.sqrt((t.x - prev.x) ** 2 + (t.y - prev.y) ** 2);
+            return dist < 40;
+          });
+          setNearbyTreasure(nearby ? nearby.id : null);
+          return prev;
         });
-        setNearbyTreasure(nearby ? nearby.id : null);
-        return prev;
-      });
+
+        // Check for nearby cave entrances (only in overworld)
+        setPlayer(prev => {
+          const playerTileX = Math.floor(prev.x / TILE_SIZE);
+          const playerTileY = Math.floor(prev.y / TILE_SIZE);
+
+          // Check adjacent tiles for cave entrance
+          let foundCave = null;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const checkX = playerTileX + dx;
+              const checkY = playerTileY + dy;
+              if (checkX >= 0 && checkX < WORLD_WIDTH && checkY >= 0 && checkY < WORLD_HEIGHT) {
+                if (world[checkY][checkX] === TILES.CAVE_ENTRANCE) {
+                  foundCave = { x: checkX, y: checkY };
+                  break;
+                }
+              }
+            }
+            if (foundCave) break;
+          }
+          setNearbyCave(foundCave);
+          return prev;
+        });
+      } else {
+        setNearbyTreasure(null);
+        setNearbyCave(null);
+
+        // Check for nearby exit (only in cave)
+        setPlayer(prev => {
+          const playerTileX = Math.floor(prev.x / TILE_SIZE);
+          const playerTileY = Math.floor(prev.y / TILE_SIZE);
+
+          let onExit = false;
+          if (playerTileX >= 0 && playerTileX < CAVE_WIDTH && playerTileY >= 0 && playerTileY < CAVE_HEIGHT) {
+            if (caveMap[playerTileY][playerTileX] === CAVE_TILES.EXIT) {
+              onExit = true;
+            }
+          }
+          setNearbyExit(onExit);
+          return prev;
+        });
+      }
     }, 1000 / 60);
 
     return () => clearInterval(gameLoop);
-  }, [keys, world, treasures]);
+  }, [keys, currentWorld, treasures, inCave, caveMap, currentWidth, currentHeight, checkWalkable]);
 
-  return { player, frameCount, nearbyTreasure };
+  const setPlayerPosition = (x, y) => {
+    setPlayer(prev => ({ ...prev, x, y }));
+  };
+
+  return { player, frameCount, nearbyTreasure, nearbyCave, nearbyExit, setPlayerPosition };
 };
