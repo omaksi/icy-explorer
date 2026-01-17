@@ -19,7 +19,13 @@ export const useRenderer = ({
   caveTreasures,
   nearbyTreasure,
   frameCount,
+  viewportWidth,
+  viewportHeight,
 }) => {
+  // Use provided viewport dimensions or fall back to constants
+  const vw = viewportWidth || VIEWPORT_WIDTH;
+  const vh = viewportHeight || VIEWPORT_HEIGHT;
+
   // Get current map dimensions
   const currentWidth = inCave ? CAVE_WIDTH : WORLD_WIDTH;
   const currentHeight = inCave ? CAVE_HEIGHT : WORLD_HEIGHT;
@@ -32,18 +38,18 @@ export const useRenderer = ({
     const ctx = canvas.getContext('2d');
 
     // Calculate camera position (centered on player)
-    const cameraX = player.x - VIEWPORT_WIDTH / 2;
-    const cameraY = player.y - VIEWPORT_HEIGHT / 2;
+    const cameraX = player.x - vw / 2;
+    const cameraY = player.y - vh / 2;
 
     // Clear canvas with appropriate background
     ctx.fillStyle = inCave ? '#1f2937' : '#e8f4f8';
-    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+    ctx.fillRect(0, 0, vw, vh);
 
     // Calculate visible tile range
     const startTileX = Math.max(0, Math.floor(cameraX / TILE_SIZE));
     const startTileY = Math.max(0, Math.floor(cameraY / TILE_SIZE));
-    const endTileX = Math.min(currentWidth, Math.ceil((cameraX + VIEWPORT_WIDTH) / TILE_SIZE) + 1);
-    const endTileY = Math.min(currentHeight, Math.ceil((cameraY + VIEWPORT_HEIGHT) / TILE_SIZE) + 1);
+    const endTileX = Math.min(currentWidth, Math.ceil((cameraX + vw) / TILE_SIZE) + 1);
+    const endTileY = Math.min(currentHeight, Math.ceil((cameraY + vh) / TILE_SIZE) + 1);
 
     // Draw tiles
     for (let y = startTileY; y < endTileY; y++) {
@@ -79,5 +85,5 @@ export const useRenderer = ({
       drawMinimap(ctx, world, player, treasures);
     }
 
-  }, [canvasRef, player, currentWorld, frameCount, keys, treasures, caveTreasures, nearbyTreasure, inCave, caveMap, world, currentWidth, currentHeight]);
+  }, [canvasRef, player, currentWorld, frameCount, keys, treasures, caveTreasures, nearbyTreasure, inCave, caveMap, world, currentWidth, currentHeight, vw, vh]);
 };

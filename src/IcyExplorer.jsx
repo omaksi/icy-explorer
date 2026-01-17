@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './constants';
 import { generateWorld, generateTreasures } from './world/generation';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useInteraction } from './hooks/useInteraction';
 import { useRenderer } from './hooks/useRenderer';
+import { useWindowSize } from './hooks/useWindowSize';
 import Inventory from './components/Inventory';
 import WordPopup from './components/WordPopup';
 import TreasureHint from './components/TreasureHint';
@@ -14,6 +14,7 @@ import Controls from './components/Controls';
 
 export default function IcyExplorer() {
   const canvasRef = useRef(null);
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
   const [world] = useState(() => generateWorld());
   const [treasures, setTreasures] = useState(() => []);
   const [collectedWords, setCollectedWords] = useState([]);
@@ -70,52 +71,54 @@ export default function IcyExplorer() {
     caveTreasures,
     nearbyTreasure,
     frameCount,
+    viewportWidth: windowWidth,
+    viewportHeight: windowHeight,
   });
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
-      <h1 className="text-2xl font-bold text-cyan-300 mb-4">
-        {inCave ? 'Jaskyňa' : 'Icy Explorer'}
-      </h1>
-      <div className="relative">
+    <div className="fixed inset-0 bg-gray-900 overflow-hidden">
+      <div className="relative w-full h-full">
         <canvas
           ref={canvasRef}
-          width={VIEWPORT_WIDTH}
-          height={VIEWPORT_HEIGHT}
-          className={`border-4 rounded-lg shadow-lg ${
-            inCave
-              ? 'border-purple-600 shadow-purple-500/20'
-              : 'border-cyan-600 shadow-cyan-500/20'
-          }`}
+          width={windowWidth}
+          height={windowHeight}
+          className="block"
           tabIndex={0}
         />
+
+        {/* Title overlay */}
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+          <h1 className={`text-2xl font-bold px-4 py-2 rounded-lg bg-gray-900/70 ${
+            inCave ? 'text-purple-300' : 'text-cyan-300'
+          }`}>
+            {inCave ? 'Jaskyňa' : 'Icy Explorer'}
+          </h1>
+        </div>
 
         {showWordPopup && <WordPopup word={showWordPopup.word} />}
         {showInventory && <Inventory collectedWords={collectedWords} />}
         {nearbyTreasure !== null && !showWordPopup && !showInventory && <TreasureHint />}
         {!inCave && nearbyCave !== null && nearbyTreasure === null && !showInventory && <CaveHint />}
         {inCave && nearbyExit && !showInventory && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2
                           bg-gray-800/90 border-2 border-green-500 rounded-lg px-4 py-2
                           text-green-300 text-sm animate-bounce">
             Stlač MEDZERNÍK pre výstup z jaskyne
           </div>
         )}
         <StatsBar count={collectedWords.length} />
+
+        {/* Instructions overlay */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-cyan-200 text-center bg-gray-900/70 px-4 py-2 rounded-lg">
+          <p className="text-sm">
+            <span className="font-bold">WASD/Šípky</span> - pohyb |
+            <span className="font-bold"> MEDZERNÍK</span> - interakcia |
+            <span className="font-bold"> E</span> - inventár
+          </p>
+        </div>
+
+        <Controls keys={keys} />
       </div>
-      <div className="mt-4 text-cyan-200 text-center">
-        <p className="mb-2">
-          <span className="font-bold">WASD/Šípky</span> - pohyb |
-          <span className="font-bold"> MEDZERNÍK</span> - interakcia |
-          <span className="font-bold"> E</span> - inventár
-        </p>
-        <p className="text-sm text-cyan-400">
-          {inCave
-            ? 'Preskúmaj jaskyňu a nájdi východ'
-            : 'Nájdi truhlice a zozbieraj vybrané slová po B a M'}
-        </p>
-      </div>
-      <Controls keys={keys} />
     </div>
   );
 }

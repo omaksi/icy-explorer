@@ -1,6 +1,6 @@
 export default function Controls({ keys }) {
   return (
-    <div className="mt-4 flex gap-2">
+    <div className="absolute bottom-4 right-4 flex gap-2">
       <div className="flex flex-col items-center">
         <div
           className={`w-12 h-12 rounded border-2 flex items-center justify-center text-2xl
