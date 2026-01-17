@@ -1,15 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { TILE_SIZE, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT } from './constants';
-import { TILES } from './world/tiles';
+import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './constants';
 import { generateWorld, generateTreasures } from './world/generation';
-import { generateCave, generateCaveTreasures, CAVE_WIDTH, CAVE_HEIGHT } from './world/caveGeneration';
-import { drawTile, drawFrozenLakeCracks } from './rendering/tiles';
-import { drawCaveTile } from './rendering/caveTiles';
-import { drawPlayer } from './rendering/player';
-import { drawTreasure } from './rendering/treasure';
-import { drawMinimap, drawCaveMinimap } from './rendering/minimap';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useGameLoop } from './hooks/useGameLoop';
+import { useInteraction } from './hooks/useInteraction';
+import { useRenderer } from './hooks/useRenderer';
 import Inventory from './components/Inventory';
 import WordPopup from './components/WordPopup';
 import TreasureHint from './components/TreasureHint';
@@ -46,129 +41,36 @@ export default function IcyExplorer() {
   );
 
   // Handle spacebar for treasures, cave entry, and cave exit
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === ' ' || e.key === 'Space') {
-        e.preventDefault();
-
-        // Handle treasure interaction
-        if (nearbyTreasure !== null) {
-          const setterFn = inCave ? setCaveTreasures : setTreasures;
-          setterFn(prev => prev.map(t => {
-            if (t.id === nearbyTreasure) {
-              if (!t.opened) {
-                setShowWordPopup({ word: t.word, id: t.id });
-                return { ...t, opened: true };
-              } else if (!t.collected) {
-                setCollectedWords(words => [...words, t.word]);
-                setShowWordPopup(null);
-                return { ...t, collected: true };
-              }
-            }
-            return t;
-          }));
-          return;
-        }
-
-        // Handle cave entry
-        if (!inCave && nearbyCave !== null) {
-          // Save current position
-          setOverworldPosition({ x: player.x, y: player.y });
-
-          // Generate cave based on entrance coordinates as seed
-          const seed = nearbyCave.y * WORLD_WIDTH + nearbyCave.x;
-          const newCave = generateCave(seed);
-          setCaveMap(newCave);
-
-          // Generate cave treasures from chest tiles
-          const newCaveTreasures = generateCaveTreasures(newCave, seed);
-          setCaveTreasures(newCaveTreasures);
-
-          // Move player to cave entrance area
-          setPlayerPosition(4 * TILE_SIZE, 4 * TILE_SIZE);
-          setInCave(true);
-          return;
-        }
-
-        // Handle cave exit
-        if (inCave && nearbyExit) {
-          // Return to overworld
-          if (overworldPosition) {
-            setPlayerPosition(overworldPosition.x, overworldPosition.y);
-          }
-          setInCave(false);
-          setCaveMap(null);
-          setCaveTreasures([]);
-          return;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nearbyTreasure, nearbyCave, nearbyExit, inCave, player, setPlayerPosition, overworldPosition]);
-
-  // Get current map dimensions
-  const currentWidth = inCave ? CAVE_WIDTH : WORLD_WIDTH;
-  const currentHeight = inCave ? CAVE_HEIGHT : WORLD_HEIGHT;
-  const currentWorld = inCave ? caveMap : world;
+  useInteraction({
+    nearbyTreasure,
+    nearbyCave,
+    nearbyExit,
+    inCave,
+    player,
+    overworldPosition,
+    setPlayerPosition,
+    setOverworldPosition,
+    setTreasures,
+    setCaveTreasures,
+    setShowWordPopup,
+    setCollectedWords,
+    setCaveMap,
+    setInCave,
+  });
 
   // Render
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !currentWorld) return;
-
-    const ctx = canvas.getContext('2d');
-
-    // Calculate camera position (centered on player)
-    const cameraX = player.x - VIEWPORT_WIDTH / 2;
-    const cameraY = player.y - VIEWPORT_HEIGHT / 2;
-
-    // Clear canvas with appropriate background
-    ctx.fillStyle = inCave ? '#1f2937' : '#e8f4f8';
-    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-
-    // Calculate visible tile range
-    const startTileX = Math.max(0, Math.floor(cameraX / TILE_SIZE));
-    const startTileY = Math.max(0, Math.floor(cameraY / TILE_SIZE));
-    const endTileX = Math.min(currentWidth, Math.ceil((cameraX + VIEWPORT_WIDTH) / TILE_SIZE) + 1);
-    const endTileY = Math.min(currentHeight, Math.ceil((cameraY + VIEWPORT_HEIGHT) / TILE_SIZE) + 1);
-
-    // Draw tiles
-    for (let y = startTileY; y < endTileY; y++) {
-      for (let x = startTileX; x < endTileX; x++) {
-        const tile = currentWorld[y][x];
-        const screenX = x * TILE_SIZE - cameraX;
-        const screenY = y * TILE_SIZE - cameraY;
-
-        if (inCave) {
-          drawCaveTile(ctx, tile, screenX, screenY, x, y);
-        } else {
-          drawTile(ctx, tile, screenX, screenY);
-          if (tile === TILES.FROZEN_LAKE) {
-            drawFrozenLakeCracks(ctx, screenX, screenY, x, y);
-          }
-        }
-      }
-    }
-
-    // Draw treasures
-    const currentTreasures = inCave ? caveTreasures : treasures;
-    currentTreasures.forEach(treasure => {
-      drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount);
-    });
-
-    // Draw player
-    drawPlayer(ctx, player, keys);
-
-    // Draw minimap
-    if (inCave) {
-      drawCaveMinimap(ctx, caveMap, player, caveTreasures);
-    } else {
-      drawMinimap(ctx, world, player, treasures);
-    }
-
-  }, [player, currentWorld, frameCount, keys, treasures, caveTreasures, nearbyTreasure, inCave, caveMap, currentWidth, currentHeight]);
+  useRenderer({
+    canvasRef,
+    world,
+    caveMap,
+    inCave,
+    player,
+    keys,
+    treasures,
+    caveTreasures,
+    nearbyTreasure,
+    frameCount,
+  });
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
