@@ -22,6 +22,7 @@ export const useRenderer = ({
   viewportWidth,
   viewportHeight,
   explored,
+  otherPlayers = {},
 }) => {
   // Use refs to avoid effect re-runs on every state change
   const worldRef = useRef(world);
@@ -36,6 +37,7 @@ export const useRenderer = ({
   const viewportWidthRef = useRef(viewportWidth);
   const viewportHeightRef = useRef(viewportHeight);
   const exploredRef = useRef(explored);
+  const otherPlayersRef = useRef(otherPlayers);
 
   // Keep refs in sync
   useEffect(() => { worldRef.current = world; }, [world]);
@@ -50,6 +52,7 @@ export const useRenderer = ({
   useEffect(() => { viewportWidthRef.current = viewportWidth; }, [viewportWidth]);
   useEffect(() => { viewportHeightRef.current = viewportHeight; }, [viewportHeight]);
   useEffect(() => { exploredRef.current = explored; }, [explored]);
+  useEffect(() => { otherPlayersRef.current = otherPlayers; }, [otherPlayers]);
 
   // Single stable render loop using requestAnimationFrame
   useEffect(() => {
@@ -69,6 +72,7 @@ export const useRenderer = ({
       const vw = viewportWidthRef.current || FALLBACK_VIEWPORT_WIDTH;
       const vh = viewportHeightRef.current || FALLBACK_VIEWPORT_HEIGHT;
       const explored = exploredRef.current;
+      const otherPlayers = otherPlayersRef.current;
 
       const currentWorld = inCave ? caveMap : world;
       if (!canvas || !currentWorld) {
@@ -128,6 +132,48 @@ export const useRenderer = ({
 
       // Draw player
       drawPlayer(ctx, player, keys, vw, vh);
+
+      // Draw other players (only if not in cave, or in same cave)
+      Object.values(otherPlayers).forEach(otherPlayer => {
+        // Skip players in caves (multiplayer caves are per-player)
+        if (otherPlayer.inCave) return;
+
+        const screenX = otherPlayer.x - cameraX + vw / 2;
+        const screenY = otherPlayer.y - cameraY + vh / 2;
+
+        // Only draw if on screen
+        if (screenX > -32 && screenX < vw + 32 && screenY > -32 && screenY < vh + 32) {
+          // Draw player with different color (create player object for drawPlayer)
+          const playerObj = {
+            x: otherPlayer.x,
+            y: otherPlayer.y,
+            direction: otherPlayer.direction,
+            frame: otherPlayer.frame,
+          };
+
+          // Save context state
+          ctx.save();
+
+          // Translate to other player position
+          ctx.translate(screenX, screenY);
+
+          // Draw other player (simplified, using same drawPlayer but with color tint)
+          ctx.globalAlpha = 0.9;
+          drawPlayer(ctx, playerObj, {}, 0, 0); // Pass 0,0 since we translated
+          ctx.globalAlpha = 1.0;
+
+          // Draw name above player
+          ctx.fillStyle = 'white';
+          ctx.strokeStyle = 'black';
+          ctx.lineWidth = 3;
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.strokeText(otherPlayer.name, 0, -35);
+          ctx.fillText(otherPlayer.name, 0, -35);
+
+          ctx.restore();
+        }
+      });
 
       // Draw minimap
       if (inCave) {

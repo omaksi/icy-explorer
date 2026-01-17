@@ -6,6 +6,7 @@ import { useInteraction } from './hooks/useInteraction';
 import { useRenderer } from './hooks/useRenderer';
 import { useWindowSize } from './hooks/useWindowSize';
 import { useExploration } from './hooks/useExploration';
+import { useMultiplayer } from './hooks/useMultiplayer';
 import Inventory from './components/Inventory';
 import WordPopup from './components/WordPopup';
 import CollectionAnimation from './components/CollectionAnimation';
@@ -13,6 +14,8 @@ import TreasureHint from './components/TreasureHint';
 import CaveHint from './components/CaveHint';
 import StatsBar from './components/StatsBar';
 import Controls from './components/Controls';
+import JoinScreen from './components/JoinScreen';
+import ConnectionStatus from './components/ConnectionStatus';
 
 export default function IcyExplorer() {
   const canvasRef = useRef(null);
@@ -24,26 +27,73 @@ export default function IcyExplorer() {
   const [showWordPopup, setShowWordPopup] = useState(null);
   const [showCollectionAnimation, setShowCollectionAnimation] = useState(null);
 
+  // Multiplayer state
+  const [hasJoined, setHasJoined] = useState(false);
+
   // Cave state
   const [inCave, setInCave] = useState(false);
   const [caveMap, setCaveMap] = useState(null);
   const [caveTreasures, setCaveTreasures] = useState([]);
   const [overworldPosition, setOverworldPosition] = useState(null);
 
-  // Initialize treasures after world is created
+  // Multiplayer connection
+  const handleTreasureUpdate = useCallback((treasure) => {
+    if (Array.isArray(treasure)) {
+      // Initial treasures from server
+      setTreasures(treasure);
+    } else {
+      // Single treasure update
+      setTreasures(prev => prev.map(t =>
+        t.id === treasure.id ? { ...t, ...treasure } : t
+      ));
+    }
+  }, []);
+
+  const {
+    isConnected,
+    playerId,
+    playerName,
+    otherPlayers,
+    connect,
+    sendJoin,
+    sendMove,
+    sendInteract,
+  } = useMultiplayer(handleTreasureUpdate);
+
+  // Connect to server on mount
   useEffect(() => {
-    setTreasures(generateTreasures(world));
-  }, [world]);
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+    connect(wsUrl);
+  }, [connect]);
+
+  // Initialize treasures after world is created (fallback for single-player)
+  useEffect(() => {
+    if (!hasJoined) {
+      setTreasures(generateTreasures(world));
+    }
+  }, [world, hasJoined]);
 
   const handleInventory = useCallback(() => {
     setShowInventory(prev => !prev);
   }, []);
+
+  const handleJoin = useCallback((name) => {
+    sendJoin(name);
+    setHasJoined(true);
+  }, [sendJoin]);
 
   const { keys, pressKey, releaseKey } = useKeyboard(null, handleInventory);
   const { player, frameCount, nearbyTreasure, nearbyCave, nearbyExit, setPlayerPosition } = useGameLoop(
     keys, world, treasures, inCave, caveMap, caveTreasures, showWordPopup, showInventory
   );
   const { explored, resetCaveExploration } = useExploration(player, inCave);
+
+  // Send movement to server
+  useEffect(() => {
+    if (hasJoined && isConnected) {
+      sendMove(keys);
+    }
+  }, [keys, hasJoined, isConnected, sendMove]);
 
   // Handle spacebar for treasures, cave entry, and cave exit
   const { handleInteraction } = useInteraction({
@@ -80,7 +130,13 @@ export default function IcyExplorer() {
     viewportWidth: windowWidth,
     viewportHeight: windowHeight,
     explored,
+    otherPlayers,
   });
+
+  // Show join screen if not joined
+  if (!hasJoined) {
+    return <JoinScreen onJoin={handleJoin} isConnected={isConnected} />;
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-900 overflow-hidden">
@@ -101,6 +157,9 @@ export default function IcyExplorer() {
             {inCave ? 'Jaskyňa' : 'Icy Explorer'}
           </h1>
         </div>
+
+        {/* Connection status */}
+        <ConnectionStatus isConnected={isConnected} playerName={playerName} />
 
         {showWordPopup && <WordPopup word={showWordPopup.word} />}
         {showCollectionAnimation && (

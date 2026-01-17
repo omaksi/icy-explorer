@@ -34,9 +34,11 @@ function Controls({ keys, onKeyPress, onKeyRelease, onSpace, onInventory }) {
     <button
       onTouchStart={(e) => handleTouchStart(e, direction)}
       onTouchEnd={(e) => handleTouchEnd(e, direction)}
+      onTouchCancel={(e) => handleTouchEnd(e, direction)}
       onMouseDown={(e) => handleMouseDown(e, direction)}
       onMouseUp={(e) => handleMouseUp(e, direction)}
       onMouseLeave={(e) => handleMouseLeave(e, direction)}
+      onContextMenu={(e) => e.preventDefault()}
       className={`w-12 h-12 rounded border-2 flex items-center justify-center text-2xl select-none touch-none active:scale-95 transition-transform
         ${isPressed ? 'bg-cyan-600 border-cyan-400' : 'bg-gray-700 border-gray-500'}`}
     >
@@ -55,7 +57,7 @@ function Controls({ keys, onKeyPress, onKeyRelease, onSpace, onInventory }) {
   );
 
   return (
-    <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+    <div className="absolute bottom-4 right-4 flex flex-col gap-2 md:hidden">
       <div className="flex gap-2">
         <div className="flex flex-col items-center">
           <ButtonControl direction="ArrowUp" symbol="↑" isPressed={keys.ArrowUp} />
