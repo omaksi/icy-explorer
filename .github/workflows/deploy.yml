@@ -38,6 +38,8 @@ jobs:
       - name: Build
         working-directory: client
         run: npm run build
+        env:
+          VITE_WS_URL: ws://34.250.94.72:30808
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
