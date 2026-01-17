@@ -8,6 +8,7 @@ import { useWindowSize } from './hooks/useWindowSize';
 import { useExploration } from './hooks/useExploration';
 import Inventory from './components/Inventory';
 import WordPopup from './components/WordPopup';
+import CollectionAnimation from './components/CollectionAnimation';
 import TreasureHint from './components/TreasureHint';
 import CaveHint from './components/CaveHint';
 import StatsBar from './components/StatsBar';
@@ -21,6 +22,7 @@ export default function IcyExplorer() {
   const [collectedWords, setCollectedWords] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
   const [showWordPopup, setShowWordPopup] = useState(null);
+  const [showCollectionAnimation, setShowCollectionAnimation] = useState(null);
 
   // Cave state
   const [inCave, setInCave] = useState(false);
@@ -37,14 +39,14 @@ export default function IcyExplorer() {
     setShowInventory(prev => !prev);
   }, []);
 
-  const keys = useKeyboard(null, handleInventory);
+  const { keys, pressKey, releaseKey } = useKeyboard(null, handleInventory);
   const { player, frameCount, nearbyTreasure, nearbyCave, nearbyExit, setPlayerPosition } = useGameLoop(
-    keys, world, treasures, inCave, caveMap, caveTreasures
+    keys, world, treasures, inCave, caveMap, caveTreasures, showWordPopup, showInventory
   );
   const { explored, resetCaveExploration } = useExploration(player, inCave);
 
   // Handle spacebar for treasures, cave entry, and cave exit
-  useInteraction({
+  const { handleInteraction } = useInteraction({
     nearbyTreasure,
     nearbyCave,
     nearbyExit,
@@ -60,6 +62,7 @@ export default function IcyExplorer() {
     setCaveMap,
     setInCave,
     resetCaveExploration,
+    setShowCollectionAnimation,
   });
 
   // Render
@@ -100,6 +103,12 @@ export default function IcyExplorer() {
         </div>
 
         {showWordPopup && <WordPopup word={showWordPopup.word} />}
+        {showCollectionAnimation && (
+          <CollectionAnimation
+            word={showCollectionAnimation.word}
+            onComplete={() => setShowCollectionAnimation(null)}
+          />
+        )}
         {showInventory && <Inventory collectedWords={collectedWords} />}
         {nearbyTreasure !== null && !showWordPopup && !showInventory && <TreasureHint />}
         {!inCave && nearbyCave !== null && nearbyTreasure === null && !showInventory && <CaveHint />}
@@ -110,7 +119,7 @@ export default function IcyExplorer() {
             Stlač MEDZERNÍK pre výstup z jaskyne
           </div>
         )}
-        <StatsBar count={collectedWords.length} />
+        <StatsBar collectedWords={collectedWords} />
 
         {/* Instructions overlay */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-cyan-200 text-center bg-gray-900/70 px-4 py-2 rounded-lg">
@@ -121,7 +130,13 @@ export default function IcyExplorer() {
           </p>
         </div>
 
-        <Controls keys={keys} />
+        <Controls
+          keys={keys}
+          onKeyPress={pressKey}
+          onKeyRelease={releaseKey}
+          onSpace={handleInteraction}
+          onInventory={handleInventory}
+        />
       </div>
     </div>
   );

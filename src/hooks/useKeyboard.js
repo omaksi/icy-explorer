@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useKeyboard = (onSpace, onInventory) => {
   const [keys, setKeys] = useState({});
+
+  const pressKey = useCallback((key) => {
+    setKeys(prev => ({ ...prev, [key]: true }));
+  }, []);
+
+  const releaseKey = useCallback((key) => {
+    setKeys(prev => ({ ...prev, [key]: false }));
+  }, []);
 
   useEffect(() => {
     const keyMap = {
@@ -44,5 +52,5 @@ export const useKeyboard = (onSpace, onInventory) => {
     };
   }, [onSpace, onInventory]);
 
-  return keys;
+  return { keys, pressKey, releaseKey };
 };

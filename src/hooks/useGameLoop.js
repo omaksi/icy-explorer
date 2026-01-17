@@ -4,7 +4,7 @@ import { isWalkable, TILES } from '../world/tiles';
 import { isCaveWalkable, CAVE_TILES } from '../world/caveTiles';
 import { CAVE_WIDTH, CAVE_HEIGHT } from '../world/caveGeneration';
 
-export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasures) => {
+export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasures, showWordPopup, showInventory) => {
   const [player, setPlayer] = useState({
     x: WORLD_WIDTH * TILE_SIZE / 2,
     y: WORLD_HEIGHT * TILE_SIZE / 2,
@@ -23,6 +23,8 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasur
   const inCaveRef = useRef(inCave);
   const caveMapRef = useRef(caveMap);
   const caveTreasuresRef = useRef(caveTreasures);
+  const showWordPopupRef = useRef(showWordPopup);
+  const showInventoryRef = useRef(showInventory);
 
   // Keep refs in sync
   useEffect(() => { keysRef.current = keys; }, [keys]);
@@ -31,6 +33,8 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasur
   useEffect(() => { inCaveRef.current = inCave; }, [inCave]);
   useEffect(() => { caveMapRef.current = caveMap; }, [caveMap]);
   useEffect(() => { caveTreasuresRef.current = caveTreasures; }, [caveTreasures]);
+  useEffect(() => { showWordPopupRef.current = showWordPopup; }, [showWordPopup]);
+  useEffect(() => { showInventoryRef.current = showInventory; }, [showInventory]);
 
   // Single stable game loop that reads from refs
   useEffect(() => {
@@ -41,6 +45,8 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasur
       const caveMap = caveMapRef.current;
       const treasures = treasuresRef.current;
       const caveTreasures = caveTreasuresRef.current;
+      const showWordPopup = showWordPopupRef.current;
+      const showInventory = showInventoryRef.current;
 
       const currentWorld = inCave ? caveMap : world;
       if (!currentWorld) return;
@@ -57,26 +63,29 @@ export const useGameLoop = (keys, world, treasures, inCave, caveMap, caveTreasur
         let direction = prev.direction;
         let moving = false;
 
-        // Calculate new position based on keys
-        if (keys.ArrowUp) {
-          newY -= PLAYER_SPEED;
-          direction = 'up';
-          moving = true;
-        }
-        if (keys.ArrowDown) {
-          newY += PLAYER_SPEED;
-          direction = 'down';
-          moving = true;
-        }
-        if (keys.ArrowLeft) {
-          newX -= PLAYER_SPEED;
-          direction = 'left';
-          moving = true;
-        }
-        if (keys.ArrowRight) {
-          newX += PLAYER_SPEED;
-          direction = 'right';
-          moving = true;
+        // Disable movement when any popup is shown
+        if (!showWordPopup && !showInventory) {
+          // Calculate new position based on keys
+          if (keys.ArrowUp) {
+            newY -= PLAYER_SPEED;
+            direction = 'up';
+            moving = true;
+          }
+          if (keys.ArrowDown) {
+            newY += PLAYER_SPEED;
+            direction = 'down';
+            moving = true;
+          }
+          if (keys.ArrowLeft) {
+            newX -= PLAYER_SPEED;
+            direction = 'left';
+            moving = true;
+          }
+          if (keys.ArrowRight) {
+            newX += PLAYER_SPEED;
+            direction = 'right';
+            moving = true;
+          }
         }
 
         // Check collision with world bounds
