@@ -7,7 +7,6 @@ import { drawCaveTile } from '../rendering/caveTiles';
 import { drawPlayer } from '../rendering/player';
 import { drawTreasure } from '../rendering/treasure';
 import { drawMinimap, drawCaveMinimap } from '../rendering/minimap';
-import { isTileVisible } from './useExploration';
 
 export const useRenderer = ({
   canvasRef,
@@ -85,8 +84,8 @@ export const useRenderer = ({
       const cameraX = player.x - vw / 2;
       const cameraY = player.y - vh / 2;
 
-      // Clear canvas with fog color (unexplored areas)
-      ctx.fillStyle = '#1a1a2e';
+      // Clear canvas with appropriate background
+      ctx.fillStyle = inCave ? '#1f2937' : '#e8f4f8';
       ctx.fillRect(0, 0, vw, vh);
 
       // Calculate visible tile range
@@ -95,45 +94,28 @@ export const useRenderer = ({
       const endTileX = Math.min(currentWidth, Math.ceil((cameraX + vw) / TILE_SIZE) + 1);
       const endTileY = Math.min(currentHeight, Math.ceil((cameraY + vh) / TILE_SIZE) + 1);
 
-      // Draw tiles with fog of war
+      // Draw tiles
       for (let y = startTileY; y < endTileY; y++) {
         for (let x = startTileX; x < endTileX; x++) {
           const tile = currentWorld[y][x];
           const screenX = x * TILE_SIZE - cameraX;
           const screenY = y * TILE_SIZE - cameraY;
 
-          const isExplored = explored && explored[y] && explored[y][x];
-          const isVisible = isTileVisible(x, y, player.x, player.y);
-
-          // Only draw explored tiles
-          if (isExplored) {
-            if (inCave) {
-              drawCaveTile(ctx, tile, screenX, screenY, x, y);
-            } else {
-              drawTile(ctx, tile, screenX, screenY);
-              if (tile === TILES.FROZEN_LAKE) {
-                drawFrozenLakeCracks(ctx, screenX, screenY, x, y);
-              }
-            }
-
-            // Apply fog overlay for explored but not currently visible tiles
-            if (!isVisible) {
-              ctx.fillStyle = 'rgba(26, 26, 46, 0.5)';
-              ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+          if (inCave) {
+            drawCaveTile(ctx, tile, screenX, screenY, x, y);
+          } else {
+            drawTile(ctx, tile, screenX, screenY);
+            if (tile === TILES.FROZEN_LAKE) {
+              drawFrozenLakeCracks(ctx, screenX, screenY, x, y);
             }
           }
         }
       }
 
-      // Draw treasures (only if in visible/explored area)
+      // Draw treasures
       const currentTreasures = inCave ? caveTreasures : treasures;
       currentTreasures.forEach(treasure => {
-        const treasureTileX = Math.floor(treasure.x / TILE_SIZE);
-        const treasureTileY = Math.floor(treasure.y / TILE_SIZE);
-        const isExplored = explored && explored[treasureTileY] && explored[treasureTileY][treasureTileX];
-        if (isExplored) {
-          drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
-        }
+        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
       });
 
       // Draw player
