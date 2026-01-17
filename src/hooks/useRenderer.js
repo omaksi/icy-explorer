@@ -111,7 +111,7 @@ export const useRenderer = ({
       // Draw treasures
       const currentTreasures = inCave ? caveTreasures : treasures;
       currentTreasures.forEach(treasure => {
-        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount);
+        drawTreasure(ctx, treasure, cameraX, cameraY, nearbyTreasure, frameCount, vw, vh);
       });
 
       // Draw player
@@ -119,9 +119,9 @@ export const useRenderer = ({
 
       // Draw minimap
       if (inCave) {
-        drawCaveMinimap(ctx, caveMap, player, caveTreasures, vw);
+        drawCaveMinimap(ctx, caveMap, player, vw);
       } else {
-        drawMinimap(ctx, world, player, treasures, vw);
+        drawMinimap(ctx, world, player, vw);
       }
 
       animationId = requestAnimationFrame(render);

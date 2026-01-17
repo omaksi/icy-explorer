@@ -89,7 +89,7 @@ const createCaveMinimapCache = (caveMap) => {
   return canvas;
 };
 
-export const drawMinimap = (ctx, world, player, treasures, viewportWidth) => {
+export const drawMinimap = (ctx, world, player, viewportWidth) => {
   const vw = viewportWidth || FALLBACK_VIEWPORT_WIDTH;
   const mapX = vw - MAP_SIZE - 10;
   const mapY = 10;
@@ -104,21 +104,6 @@ export const drawMinimap = (ctx, world, player, treasures, viewportWidth) => {
   ctx.drawImage(overworldMinimapCache, mapX, mapY);
 
   const mapScale = MAP_SIZE / (WORLD_WIDTH * TILE_SIZE);
-
-  // Draw treasures on minimap (dynamic layer)
-  treasures.forEach(treasure => {
-    if (treasure.collected) return;
-    ctx.fillStyle = treasure.opened ? '#fbbf24' : '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(
-      mapX + treasure.x * mapScale,
-      mapY + treasure.y * mapScale,
-      2,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  });
 
   // Player position on mini-map
   ctx.fillStyle = '#ef4444';
@@ -138,7 +123,7 @@ export const drawMinimap = (ctx, world, player, treasures, viewportWidth) => {
   ctx.strokeRect(mapX, mapY, MAP_SIZE, MAP_SIZE);
 };
 
-export const drawCaveMinimap = (ctx, caveMap, player, caveTreasures, viewportWidth) => {
+export const drawCaveMinimap = (ctx, caveMap, player, viewportWidth) => {
   const vw = viewportWidth || FALLBACK_VIEWPORT_WIDTH;
   const mapX = vw - MAP_SIZE - 10;
   const mapY = 10;
@@ -153,21 +138,6 @@ export const drawCaveMinimap = (ctx, caveMap, player, caveTreasures, viewportWid
   ctx.drawImage(caveMinimapCache, mapX, mapY);
 
   const mapScale = MAP_SIZE / (CAVE_WIDTH * TILE_SIZE);
-
-  // Draw cave treasures on minimap (dynamic layer)
-  caveTreasures.forEach(treasure => {
-    if (treasure.collected) return;
-    ctx.fillStyle = treasure.opened ? '#fbbf24' : '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(
-      mapX + treasure.x * mapScale,
-      mapY + treasure.y * mapScale,
-      2,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  });
 
   // Player position on mini-map
   ctx.fillStyle = '#ef4444';

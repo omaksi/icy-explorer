@@ -1,11 +1,11 @@
-export const drawTreasure = (ctx, treasure, cameraX, cameraY, nearbyTreasureId, frameCount) => {
+export const drawTreasure = (ctx, treasure, cameraX, cameraY, nearbyTreasureId, frameCount, viewportWidth, viewportHeight) => {
   if (treasure.collected) return false;
 
   const screenX = treasure.x - cameraX;
   const screenY = treasure.y - cameraY;
 
   // Only draw if on screen
-  if (screenX < -32 || screenX > 640 + 32 || screenY < -32 || screenY > 480 + 32) {
+  if (screenX < -32 || screenX > viewportWidth + 32 || screenY < -32 || screenY > viewportHeight + 32) {
     return false;
   }
 
